@@ -9,13 +9,32 @@ class Directory(object):
             Directory object for interaction with file collections
             :param path: path of directory
             :param mode: mode of interaction with directory
-                'r' - read
-                'w' - write
-                'a' - append
+                's' - stat (ony access file stats)
+                'r' - read (only read files)
+                'a' - append (only add files)
+                'w' - write (add and remove files)
         """
+        if not mode in ('r', 'a', 'w'):
+            raise ValueError("Mode {} is not applicable".format(mode))
+        self.mode = mode
+        self.__read_perm = False
+        self.__append_perm = False
+        self.__write_perm = False
+        if mode == 's':
+            pass
+        else:
+            self.__read_perm = True
+            if mode == 'r':
+                pass
+            else:
+                self.__append_perm = True
+                elif mode == 'a':
+                    pass
+                elif mode == 'w':
+                    self.__write_perm = True
+
         self.path = path if path[-1] == '/' else path + '/'
         self.dir = os.listdir(path)
-        self.mode = mode
 
     def full_path(self, file_name):
         return self.path + file_name
@@ -28,6 +47,7 @@ class Directory(object):
 
     def sort(self, classifier):
         pass
+
     def remove(self):
         pass
 
