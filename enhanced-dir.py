@@ -1,5 +1,6 @@
 import os
 import sys
+import ntpath
 
 
 class Directory(object):
@@ -48,8 +49,19 @@ class Directory(object):
     def sort(self, classifier):
         pass
 
-    def remove(self):
-        pass
+    def remove(self, path, r=False):
+        head, tail = ntpath.split(path)
+        if tail:
+            self.dir.remove(tail)
+        elif head:
+            self.dir.remove(head)
+            if r == False:
+                raise ValueError(
+                    "{} is a directory and must denote recursion").format(path)
+        if r:
+            os.rmdir(path)
+        else:
+            os.remove(path)
 
     def clean(self, r=False):
         pass
