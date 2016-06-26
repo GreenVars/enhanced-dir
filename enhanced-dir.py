@@ -2,7 +2,6 @@ import os
 import sys
 import ntpath
 
-
 class Directory(object):
 
     def __init__(self, path, mode='r'):
@@ -10,12 +9,12 @@ class Directory(object):
             Directory object for interaction with file collections
             :param path: path of directory
             :param mode: mode of interaction with directory
-                's' - stat (ony access file stats)
+                's' - stat (only access file stats)
                 'r' - read (only read files)
                 'a' - append (only add files)
                 'w' - write (add and remove files)
         """
-        if not mode in ('r', 'a', 'w'):
+        if not mode in ('s', 'r', 'a', 'w'):
             raise ValueError("Mode {} is not applicable".format(mode))
         self.mode = mode
         self.__read_perm = False
@@ -29,7 +28,7 @@ class Directory(object):
                 pass
             else:
                 self.__append_perm = True
-                elif mode == 'a':
+                if mode == 'a':
                     pass
                 elif mode == 'w':
                     self.__write_perm = True
@@ -40,8 +39,20 @@ class Directory(object):
     def full_path(self, file_name):
         return self.path + file_name
 
-    def to_json(self):
-        pass
+    def to_dict(self, path=None):
+        if path is None:
+            path = self.path
+        if path[-1] == '/':
+            path = path[:-1]
+        _dict = {}
+        try:
+            current_dir, availible_dirs, availible_files = os.walk(path).next()
+        except StopIteration:
+            return {path: []}
+        _dict[current_dir] = [f for f in availible_files]
+        for dir in availible_dirs:
+            _dict[current_dir].append(self.to_dict(current_dir + "/" + dir))
+        return _dict
 
     def work(self, r=False):
         pass
@@ -50,6 +61,11 @@ class Directory(object):
         pass
 
     def remove(self, path, r=False):
+        if self.__write_perm == False:
+            raise OSError("EPERM",
+                          "There is not write permissions for {}".format(path
+                                                                         ))
+
         head, tail = ntpath.split(path)
         if tail:
             self.dir.remove(tail)
@@ -57,7 +73,7 @@ class Directory(object):
             self.dir.remove(head)
             if r == False:
                 raise ValueError(
-                    "{} is a directory and must denote recursion").format(path)
+                    "{} is a directory and must denote recursion".format(path))
         if r:
             os.rmdir(path)
         else:
@@ -108,4 +124,8 @@ class Directory(object):
 if __name__ == '__main__':
     dir = Directory("test-dir", 'r')
     print(dir.path)
-    print(dir.size_stdev())
+    # dir.remove("")
+    for f in os.walk(dir.path):
+        print(f)
+        pass
+    print(dir.to_dict())
