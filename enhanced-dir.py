@@ -2,6 +2,7 @@ import os
 import sys
 import ntpath
 
+
 class Directory(object):
 
     def __init__(self, path, mode='r'):
@@ -42,8 +43,6 @@ class Directory(object):
     def to_dict(self, path=None):
         if path is None:
             path = self.path
-        if path[-1] == '/':
-            path = path[:-1]
         _dict = {}
         try:
             current_dir, availible_dirs, availible_files = os.walk(path).next()
@@ -51,7 +50,8 @@ class Directory(object):
             return {path: []}
         _dict[current_dir] = [f for f in availible_files]
         for dir in availible_dirs:
-            _dict[current_dir].append(self.to_dict(current_dir + "/" + dir))
+            _dict[current_dir].append(self.to_dict(
+                os.path.join(current_dir, dir)))
         return _dict
 
     def work(self, r=False):
@@ -96,13 +96,28 @@ class Directory(object):
     def average_size(self):
         return self.__sizeof__() / len(self)
 
+    def find(self, needle):
+        """
+            Recursively find a file.
+            :param needle: file name to find
+            :return: return path if file is found else False
+        """
+        for current_dir, availible_dirs, availible_files in os.walk(self.path):
+            if needle in availible_files:
+                return os.path.join(current_dir, needle)
+            if needle in availible_dirs:
+                return os.path.join(current_dir, needle)
+
+        return False
+
     def __contains__(self, needle):
         """
             Recursively find a file. Use file_name in self.dir for lowest dir
             :param needle: file name to find
-            :return: return path if file is found else False
+            :return: return True if file is found else False
         """
-        pass
+
+        return self.find(needle)  # automatically converted to bool
 
     def __add__(self, other):
         pass
@@ -123,9 +138,10 @@ class Directory(object):
 
 if __name__ == '__main__':
     dir = Directory("test-dir", 'r')
-    print(dir.path)
-    # dir.remove("")
-    for f in os.walk(dir.path):
-        print(f)
-        pass
     print(dir.to_dict())
+    print(dir.find("1000-primes.txt"))
+    print(dir.find("1001-primes.txt"))
+    print(dir.find("bruno.txt"))
+    print(dir.find("even-more-files"))
+    print(dir.find("more-files"))
+    print(dir.find("fake-folder"))
