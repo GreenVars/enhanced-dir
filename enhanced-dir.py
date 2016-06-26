@@ -34,11 +34,14 @@ class Directory(object):
                 elif mode == 'w':
                     self.__write_perm = True
 
-        self.path = path if path[-1] == '/' else path + '/'
+        self.path = path if path[-1] == os.sep else path + os.sep
         self.dir = os.listdir(path)
 
     def full_path(self, file_name):
-        return self.path + file_name
+        return os.path.join(self.path, file_name)
+
+    def head_walk(self):
+        return os.walk(self.path).next()
 
     def to_dict(self, path=None):
         if path is None:
@@ -54,10 +57,34 @@ class Directory(object):
                 os.path.join(current_dir, dir)))
         return _dict
 
-    def work(self, r=False):
-        pass
+    def work(self, worker, r=False, args=tuple(), kwargs={}):
+        if r is False:
+            for f in self.head_walk()[-1]:
+                worker(f, *args, **kwargs)
+        elif r:
+            for _, _, files in os.walk(self.path):
+                for f in files:
+                    worker(f, *args, **kwargs)
 
-    def sort(self, classifier):
+    def clean(self, r=False):
+        def remove_if_empty(path):
+            empty = os.path.getsize(f) == 0
+            if empty:
+                os.remove(f)
+        self.work(remove_if_empty, r)
+
+    def count(self, classifier, r=False, args=tuple(), kwargs={}):
+        if r is False:
+            return sum(1 for f in self.dir if classifier(f, *args, **kwargs))
+        elif r:
+            c = 0
+            for _, _, files in os.walk(self.path):
+                for f in files:
+                    if classifier(f, *args, **kwargs):
+                        c += 1
+            return c
+
+    def sort(self, classifier, r=False):
         pass
 
     def remove(self, path, r=False):
@@ -79,13 +106,7 @@ class Directory(object):
         else:
             os.remove(path)
 
-    def clean(self, r=False):
-        pass
-
     def tree(self):
-        pass
-
-    def count(self, classifier, r=False):
         pass
 
     def size_stdev(self):
